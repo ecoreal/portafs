@@ -37,10 +37,19 @@ function underSubdir(paths, subdirPosix) {
 
 // Absolute work-tree root, or null when cwd is not inside a repository (or git
 // is missing / refuses to run, e.g. "dubious ownership") — callers fall back.
+// realpathSync matters on Windows: os.tmpdir() hands out 8.3 short names
+// (RUNNER~1) while rev-parse returns the long form, and callers compare the
+// two lexically.
 export async function detectRepo(cwd) {
   try {
     const top = (await git(['rev-parse', '--show-toplevel'], cwd)).trim();
-    return top.length > 0 ? path.resolve(top) : null;
+    if (top.length === 0) return null;
+    const resolved = path.resolve(top);
+    try {
+      return fs.realpathSync(resolved);
+    } catch {
+      return resolved;
+    }
   } catch {
     return null;
   }

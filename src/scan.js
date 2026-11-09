@@ -52,7 +52,15 @@ export function withAncestorDirs(paths) {
 export async function collectPaths(root, { staged = false } = {}) {
   const repoRoot = await detectRepo(root);
   if (repoRoot) {
-    const rel = path.relative(repoRoot, root);
+    // realpath both sides: on Windows os.tmpdir() yields 8.3 short names while
+    // rev-parse returns the long form, and path.relative is purely lexical
+    let rootReal = root;
+    try {
+      rootReal = fs.realpathSync(root);
+    } catch {
+      /* keep as-is */
+    }
+    const rel = path.relative(repoRoot, rootReal);
     const inside = rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
     if (inside) {
       const files = staged ? await stagedFiles(repoRoot, root) : await trackedFiles(repoRoot, root);
