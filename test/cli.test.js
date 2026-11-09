@@ -123,7 +123,7 @@ test('CLI check exits 1 on violations, 0 when rules are filtered away', async (t
   // APFS (macOS) normalizes the NFC name to NFD on write, collapsing the pair
   // into one file — a collision the filesystem erased is not a violation, and
   // the tool is CORRECT to report none there.
-  const nfdPairSurvives = fs.readdirSync(dir).length === 2;
+  const nfdPairSurvives = fs.readdirSync(dir).filter((n) => n.startsWith('caf')).length === 2;
   if (!nfdPairSurvives) {
     assert.equal(runCli(['check', '.'], { cwd: dir }).status, 0);
     return;
@@ -142,7 +142,7 @@ test('CLI check exits 1 on violations, 0 when rules are filtered away', async (t
 
 test('CLI --json output is parseable and complete', async (t) => {
   const dir = await makeViolationFixture(t);
-  const nfdPairSurvives = fs.readdirSync(dir).length === 2;
+  const nfdPairSurvives = fs.readdirSync(dir).filter((n) => n.startsWith('caf')).length === 2;
   const result = runCli(['check', '.', '--json'], { cwd: dir });
   if (!nfdPairSurvives) {
     assert.equal(result.status, 0);
