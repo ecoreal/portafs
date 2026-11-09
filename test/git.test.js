@@ -115,7 +115,10 @@ test('stagedFiles returns staged additions and skips untracked files', { skip: s
   await writeFile(path.join(dir, 'later.md'), 'untracked');
 
   const staged = await stagedFiles(dir);
-  assert.deepEqual(staged.sort(), [nfc, nfd].sort());
+  // APFS (macOS) normalises NFC to NFD on write, so the two names can collapse
+  // into one on-disk entry — assert against what the filesystem actually kept.
+  const onDisk = fs.readdirSync(dir).filter((n) => n.startsWith('caf'));
+  assert.deepEqual(staged.sort(), onDisk.sort());
 });
 
 test('stagedFiles excludes staged deletions (diff-filter ACMR)', { skip: skipNoGit }, async (t) => {
@@ -144,6 +147,17 @@ test('CLI: default mode audits tracked files only, --staged audits staged only',
 
   const before = runCli(['check', '.'], { cwd: dir, env });
   assert.equal(before.status, 0, `expected clean checkout, got:\n${before.stdout}${before.stderr}`);
+
+  // APFS (macOS) collapses the NFC/NFD pair into one on-disk entry; a lone
+  // name is not a violation, so the pair-dependent asserts only hold where
+  // both files really exist.
+  const collapsed = !fs.readdirSync(dir).includes(nfd); // APFS kept only one of the pair
+  if (collapsed) {
+    git(dir, env, 'add', '.');
+    const lone = runCli(['check', '.', '--staged'], { cwd: dir, env });
+    assert.equal(lone.status, 0, 'a lone (collapsed) name is not a violation');
+    return;
+  }
 
   git(dir, env, 'add', nfc, nfd);
   const trackedRun = runCli(['check', '.'], { cwd: dir, env });
