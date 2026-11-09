@@ -8,6 +8,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
 import { detectRepo, stagedFiles, trackedFiles } from '../src/git.js';
 import { collectPaths } from '../src/scan.js';
 
@@ -68,7 +69,10 @@ async function initRepo(t) {
 test('detectRepo finds the enclosing repository root', { skip: skipNoGit }, async (t) => {
   const { dir, env } = await initRepo(t);
   const expected = git(dir, env, 'rev-parse', '--show-toplevel').trim();
-  assert.equal(await detectRepo(dir), path.resolve(expected));
+  assert.equal(
+    fs.realpathSync.native(await detectRepo(dir)),
+    fs.realpathSync.native(path.resolve(expected)),
+  );
 });
 
 test('detectRepo returns null outside a repository', async (t) => {
@@ -84,8 +88,8 @@ test('trackedFiles lists indexed files relative to the scan directory', { skip: 
   git(dir, env, 'add', '.');
   await writeFile(path.join(dir, 'untracked.md'), 'x');
 
-  assert.deepEqual((await trackedFiles(dir, dir)).sort(), ['a.md', 'sub/b.md']);
-  assert.deepEqual(await trackedFiles(dir, path.join(dir, 'sub')), ['b.md']);
+  assert.deepEqual((await trackedFiles(dir)).sort(), ['a.md', 'sub/b.md']);
+  assert.deepEqual(await trackedFiles(path.join(dir, 'sub')), ['b.md']);
 });
 
 test('collectPaths uses git-tracked mode and expands ancestor directories', { skip: skipNoGit }, async (t) => {
@@ -110,7 +114,7 @@ test('stagedFiles returns staged additions and skips untracked files', { skip: s
   git(dir, env, 'add', '.');
   await writeFile(path.join(dir, 'later.md'), 'untracked');
 
-  const staged = await stagedFiles(dir, dir);
+  const staged = await stagedFiles(dir);
   assert.deepEqual(staged.sort(), [nfc, nfd].sort());
 });
 
@@ -125,7 +129,7 @@ test('stagedFiles excludes staged deletions (diff-filter ACMR)', { skip: skipNoG
   git(dir, env, 'add', '-A');
 
   // kept.md is a modification (included); gone.md is a deletion (excluded).
-  assert.deepEqual(await stagedFiles(dir, dir), ['kept.md']);
+  assert.deepEqual(await stagedFiles(dir), ['kept.md']);
 });
 
 test('CLI: default mode audits tracked files only, --staged audits staged only', { skip: skipNoGit }, async (t) => {

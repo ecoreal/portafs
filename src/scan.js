@@ -1,7 +1,7 @@
 // Collects the relative path list the rules run on.
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { detectRepo, stagedFiles, trackedFiles } from './git.js';
+import { stagedFiles, trackedFiles, git } from './git.js';
 
 // Depth-first walk collecting every entry (files AND directories) as a
 // POSIX-separated relative path. Relative paths are built by string join so
@@ -49,24 +49,26 @@ export function withAncestorDirs(paths) {
 
 // Mode selection: inside a git work tree audit the tracked (or staged) files;
 // everywhere else — or when git is unusable — fall back to a plain walk.
+// "Inside" is decided by git itself (rev-parse --is-inside-work-tree run FROM
+// the scan root) — never by comparing paths lexically, which breaks on Windows
+// where os.tmpdir() yields 8.3 short names while rev-parse prints long forms.
 export async function collectPaths(root, { staged = false } = {}) {
-  const repoRoot = await detectRepo(root);
-  if (repoRoot) {
-    // realpath both sides: on Windows os.tmpdir() yields 8.3 short names while
-    // rev-parse returns the long form, and path.relative is purely lexical.
-    // .native is required — the JS realpath does not expand 8.3 components.
-    let rootReal = root;
-    try {
-      rootReal = fs.realpathSync.native(root);
-    } catch {
-      /* keep as-is */
-    }
-    const rel = path.relative(repoRoot, rootReal);
-    const inside = rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
-    if (inside) {
-      const files = staged ? await stagedFiles(repoRoot, root) : await trackedFiles(repoRoot, root);
-      return { mode: staged ? 'git-staged' : 'git-tracked', paths: withAncestorDirs(files) };
-    }
+  const inside = await insideWorkTree(root);
+  if (inside) {
+    const files = staged ? await stagedFiles(root) : await trackedFiles(root);
+    return { mode: staged ? 'git-staged' : 'git-tracked', paths: withAncestorDirs(files) };
   }
   return { mode: 'filesystem', paths: await walkDirectory(root) };
+}
+
+// Git's own answer to "are we inside a work tree?", asked from the scan root.
+// Immune to 8.3/long path divergence: git walks up from cwd, no lexical
+// comparison anywhere.
+async function insideWorkTree(root) {
+  try {
+    const out = await git(['rev-parse', '--is-inside-work-tree'], root);
+    return out.trim() === 'true';
+  } catch {
+    return false;
+  }
 }

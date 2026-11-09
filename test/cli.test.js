@@ -176,6 +176,9 @@ test('CLI exits 2 on usage errors', async (t) => {
 
 test('CLI --max-length lowers the path-length threshold', async (t) => {
   const dir = await makeViolationFixture(t);
+  if (fs.readdirSync(dir).filter((n) => n.startsWith('caf')).length !== 2) {
+    t.skip('APFS normalised the NFC/NFD pair away');
+  }
   const result = runCli(['check', '.', '--json', '--max-length', '3'], { cwd: dir });
   assert.equal(result.status, 1);
   const report = JSON.parse(result.stdout);
@@ -184,6 +187,9 @@ test('CLI --max-length lowers the path-length threshold', async (t) => {
 
 test('NO_COLOR and --no-color suppress ANSI escapes', async (t) => {
   const dir = await makeViolationFixture(t);
+  if (fs.readdirSync(dir).filter((n) => n.startsWith('caf')).length !== 2) {
+    t.skip('APFS normalised the NFC/NFD pair away');
+  }
   const viaEnv = runCli(['check', '.'], { cwd: dir, env: { ...process.env, NO_COLOR: '1' } });
   assert.equal(viaEnv.status, 1);
   assert.ok(!viaEnv.stdout.includes('\u001b'));
@@ -193,6 +199,9 @@ test('NO_COLOR and --no-color suppress ANSI escapes', async (t) => {
 
 test('baseline flow: snapshot, then report only new violations', async (t) => {
   const dir = await makeViolationFixture(t);
+  if (fs.readdirSync(dir).filter((n) => n.startsWith('caf')).length !== 2) {
+    t.skip('APFS normalised the NFC/NFD pair away');
+  }
 
   const written = runCli(['baseline', '.'], { cwd: dir });
   assert.equal(written.status, 0);
