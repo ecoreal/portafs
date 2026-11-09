@@ -1,0 +1,76 @@
+name: Bug report
+description: portafs did something different from what the documentation says
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. The `--json` output of the failing run is the fastest way to a fix — it contains every detail the tool saw.
+
+        For security-sensitive reports, please use [private vulnerability reporting](https://github.com/ecoreal/portafs/security/advisories/new) instead (see [SECURITY.md](../blob/main/SECURITY.md)).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the behavior, including what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Command and output
+      description: |
+        The exact command you ran and its full output, ideally from `portafs check --json`.
+        If the issue involves a specific file name, show the name exactly as it is on disk.
+      placeholder: |
+        $ npx portafs check --json
+        { ... }
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: portafs version
+      description: Output of `portafs --version` (or `npx portafs --version`).
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other (describe below)
+    validations:
+      required: true
+  - type: dropdown
+    id: node-version
+    attributes:
+      label: Node.js version
+      description: Output of `node --version`.
+      options:
+        - "24.x"
+        - "22.x"
+        - "20.x"
+        - "18.x"
+        - Other (describe below)
+    validations:
+      required: true
+  - type: checkboxes
+    id: git-mode
+    attributes:
+      label: Scan mode
+      description: Which mode did the failing run use? Check all that apply.
+      options:
+        - label: Inside a git repository (default tracked-file mode)
+        - label: With `--staged`
+        - label: Outside a repository (filesystem walk)
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Logs, screenshots, or related issues. Not required.

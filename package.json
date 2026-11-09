@@ -1,0 +1,36 @@
+{
+  "name": "portafs",
+  "version": "0.1.0",
+  "description": "Audit any repo for filenames that break on other platforms — case collisions, Windows reserved names, long paths, and Unicode traps — before they break a teammate's checkout or CI.",
+  "license": "MIT",
+  "author": "ecoreal <ecoreal@users.noreply.github.com>",
+  "type": "module",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "bin": {
+    "portafs": "bin/portafs.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "portability",
+    "filenames",
+    "cross-platform",
+    "windows",
+    "macos",
+    "unicode",
+    "case-collision",
+    "pre-commit",
+    "ci",
+    "lint"
+  ]
+}
