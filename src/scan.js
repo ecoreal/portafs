@@ -53,10 +53,11 @@ export async function collectPaths(root, { staged = false } = {}) {
   const repoRoot = await detectRepo(root);
   if (repoRoot) {
     // realpath both sides: on Windows os.tmpdir() yields 8.3 short names while
-    // rev-parse returns the long form, and path.relative is purely lexical
+    // rev-parse returns the long form, and path.relative is purely lexical.
+    // .native is required — the JS realpath does not expand 8.3 components.
     let rootReal = root;
     try {
-      rootReal = fs.realpathSync(root);
+      rootReal = fs.realpathSync.native(root);
     } catch {
       /* keep as-is */
     }
